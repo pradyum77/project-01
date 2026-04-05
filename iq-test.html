@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IQ Estimator Test</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .card { background: #fff; border-radius: 16px; border: 1px solid #e5e5e0; padding: 2rem; width: 100%; max-width: 560px; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .sub { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 1.5rem; }
+  input[type=text] { width: 100%; padding: 10px 14px; border: 1px solid #d0d0c8; border-radius: 8px; font-size: 14px; background: #fff; color: #1a1a1a; margin-bottom: 12px; outline: none; }
+  input[type=text]:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
+  .btn { padding: 10px 20px; border: 1px solid #d0d0c8; border-radius: 8px; cursor: pointer; font-size: 14px; background: #fff; color: #1a1a1a; margin-right: 8px; margin-top: 8px; transition: background 0.15s; display: inline-block; }
+  .btn:hover { background: #f5f5f3; }
+  .btn.primary { background: #378ADD; color: #fff; border-color: #378ADD; }
+  .btn.primary:hover { background: #185FA5; }
+  .progress-bar { height: 4px; background: #e5e5e0; border-radius: 2px; margin-bottom: 1.5rem; }
+  .progress-fill { height: 4px; background: #378ADD; border-radius: 2px; transition: width 0.3s; }
+  .cat-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #E6F1FB; color: #0C447C; display: inline-block; margin-bottom: 10px; }
+  .q-text { font-size: 16px; font-weight: 500; margin-bottom: 1rem; line-height: 1.5; }
+  .opt-btn { display: block; width: 100%; text-align: left; padding: 10px 14px; margin: 6px 0; background: #fff; border: 1px solid #d0d0c8; border-radius: 8px; cursor: pointer; font-size: 14px; color: #1a1a1a; transition: background 0.15s; }
+  .opt-btn:hover { background: #f5f5f3; }
+  .opt-btn.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .opt-btn.wrong { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; }
+  .iq-score { font-size: 56px; font-weight: 500; line-height: 1; color: #1a1a1a; }
+  .iq-label { font-size: 15px; color: #666; margin-top: 4px; margin-bottom: 1.5rem; }
+  .band-wrap { height: 4px; background: #e5e5e0; border-radius: 2px; margin-bottom: 4px; position: relative; }
+  .band-dot { position: absolute; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: #378ADD; transform: translateX(-50%); }
+  .band-labels { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 1.5rem; }
+  .breakdown-card { border: 1px solid #e5e5e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
+  .breakdown-row:last-child { border-bottom: none; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .tabs { display: flex; border-bottom: 1px solid #e5e5e0; margin-bottom: 1.5rem; }
+  .tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: #999; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #185FA5; border-bottom-color: #378ADD; }
+  .lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { width: 28px; text-align: center; font-weight: 500; color: #999; font-size: 13px; }
+  .lb-name { flex: 1; font-weight: 500; color: #1a1a1a; }
+  .lb-date { font-size: 11px; color: #aaa; }
+  .lb-cat { font-size: 11px; color: #666; min-width: 80px; text-align: right; }
+  .lb-iq { font-size: 18px; font-weight: 500; color: #185FA5; min-width: 36px; text-align: right; }
+  .notice { font-size: 12px; color: #999; line-height: 1.6; margin-bottom: 1rem; padding: 10px 14px; background: #f9f9f7; border-radius: 8px; }
+  .status { font-size: 13px; color: #666; margin-bottom: 1rem; }
+  @media (max-width: 480px) { .card { padding: 1.25rem; } }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- NAME SECTION -->
+  <div id="sec-name" class="section active">
+    <h1>IQ estimator</h1>
+    <p class="sub">20 questions across pattern recognition, logical reasoning, verbal ability, and spatial reasoning. Results appear on the shared leaderboard.</p>
+    <label style="font-size:13px;color:#666;display:block;margin-bottom:6px;">Your name</label>
+    <input type="text" id="player-name" placeholder="Enter your name..." maxlength="30" />
+    <div>
+      <button class="btn primary" onclick="startQuiz()">Start test</button>
+      <button class="btn" onclick="showSection('leaderboard')">View leaderboard</button>
+    </div>
+  </div>
+
+  <!-- QUIZ SECTION -->
+  <div id="sec-quiz" class="section">
+    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div style="font-size:12px;color:#999;margin-bottom:1rem;" id="q-counter">Question 1 of 20</div>
+    <div class="cat-badge" id="q-cat"></div>
+    <p class="q-text" id="q-text"></p>
+    <div id="options-wrap"></div>
+    <button class="btn" id="next-btn" style="display:none;margin-top:1rem;" onclick="nextQ()">Next →</button>
+  </div>
+
+  <!-- RESULT SECTION -->
+  <div id="sec-result" class="section">
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:13px;color:#666;margin-bottom:4px;">Your estimated IQ</div>
+      <div class="iq-score" id="iq-val"></div>
+      <div class="iq-label" id="iq-label"></div>
+    </div>
+    <div class="band-wrap"><div class="band-dot" id="band-dot" style="left:50%"></div></div>
+    <div class="band-labels"><span>70</span><span>85</span><span>100</span><span>115</span><span>130+</span></div>
+    <div class="breakdown-card" id="breakdown-card"></div>
+    <p class="notice">This is an approximation for fun — not a certified IQ test. For an accurate assessment, consult a licensed psychologist.</p>
+    <div class="status" id="save-status"></div>
+    <button class="btn" onclick="showSection('leaderboard')">View leaderboard</button>
+    <button class="btn" onclick="resetQuiz()">Retake test</button>
+  </div>
+
+  <!-- LEADERBOARD SECTION -->
+  <div id="sec-leaderboard" class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+      <h1>Leaderboard</h1>
+      <button class="btn" onclick="loadLeaderboard()" style="font-size:12px;padding:6px 12px;">Refresh</button>
+    </div>
+    <div id="lb-list"><p style="color:#999;font-size:14px;">Loading...</p></div>
+    <div style="margin-top:1.5rem;">
+      <button class="btn primary" onclick="showSection('name')">Take the test</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // -----------------------------------------------------------------------
+  // LEADERBOARD BACKEND
+  // Option A (default): localStorage — scores saved locally in the browser.
+  // Option B: JSONBin.io — free, no signup needed for public bins.
+  //   1. Go to https://jsonbin.io, create a free account
+  //   2. Create a new bin with content: []
+  //   3. Copy the bin ID and your API key below
+  //   Then set USE_JSONBIN = true
+  // -----------------------------------------------------------------------
+  const USE_JSONBIN = false;
+  const JSONBIN_ID  = 'YOUR_BIN_ID_HERE';
+  const JSONBIN_KEY = 'YOUR_API_KEY_HERE';
+
+  async function fetchScores() {
+    if(USE_JSONBIN) {
+      const r = await fetch('https://api.jsonbin.io/v3/b/'+JSONBIN_ID+'/latest', { headers: {'X-Master-Key': JSONBIN_KEY} });
+      const d = await r.json();
+      return Array.isArray(d.record) ? d.record : [];
+    }
+    return JSON.parse(localStorage.getItem('iq_lb') || '[]');
+  }
+
+  async function pushScore(entry) {
+    if(USE_JSONBIN) {
+      const existing = await fetchScores();
+      existing.push(entry);
+      await fetch('https://api.jsonbin.io/v3/b/'+JSONBIN_ID, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
+        body: JSON.stringify(existing)
+      });
+    } else {
+      const existing = JSON.parse(localStorage.getItem('iq_lb') || '[]');
+      existing.push(entry);
+      localStorage.setItem('iq_lb', JSON.stringify(existing));
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  const questions = [
+    {cat:'Pattern',q:'2, 4, 8, 16, ?',opts:['24','32','28','20'],ans:1},
+    {cat:'Pattern',q:'1, 4, 9, 16, ?',opts:['20','25','24','18'],ans:1},
+    {cat:'Pattern',q:'3, 6, 12, 24, ?',opts:['36','48','42','30'],ans:1},
+    {cat:'Pattern',q:'5, 10, 20, 40, ?',opts:['60','80','75','50'],ans:1},
+    {cat:'Pattern',q:'1, 1, 2, 3, 5, 8, ?',opts:['11','12','13','10'],ans:2},
+    {cat:'Logic',q:'All roses are flowers. Some flowers fade quickly. Therefore:',opts:['All roses fade quickly','Some roses may fade quickly','No roses fade quickly','Roses never fade'],ans:1},
+    {cat:'Logic',q:'If all A are B, and all B are C, then:',opts:['Some A are C','All A are C','No A are C','Some C are A'],ans:1},
+    {cat:'Logic',q:'A is taller than B. C is shorter than B. Who is tallest?',opts:['B','C','A','Cannot tell'],ans:2},
+    {cat:'Logic',q:'If it rains, the ground is wet. The ground is wet. Therefore:',opts:['It rained','It may or may not have rained','It did not rain','It will rain'],ans:1},
+    {cat:'Logic',q:'Every dog has four legs. Rex has four legs. Therefore:',opts:['Rex is a dog','Rex may or may not be a dog','Rex is not a dog','Rex is an animal'],ans:1},
+    {cat:'Verbal',q:'Choose the odd one out:',opts:['Apple','Mango','Carrot','Banana'],ans:2},
+    {cat:'Verbal',q:'"Abundant" most nearly means:',opts:['Scarce','Plentiful','Hidden','Broken'],ans:1},
+    {cat:'Verbal',q:'Choose the word most opposite to "Benevolent":',opts:['Kind','Generous','Malicious','Gentle'],ans:2},
+    {cat:'Verbal',q:'"Ephemeral" most nearly means:',opts:['Eternal','Short-lived','Powerful','Ancient'],ans:1},
+    {cat:'Verbal',q:'Choose the odd one out:',opts:['Square','Circle','Triangle','Cube'],ans:3},
+    {cat:'Spatial',q:'A square is folded in half diagonally. What shape is formed?',opts:['Rectangle','Triangle','Pentagon','Trapezoid'],ans:1},
+    {cat:'Spatial',q:'How many faces does a cube have?',opts:['4','8','6','12'],ans:2},
+    {cat:'Spatial',q:'A clock shows 3:00. What angle is between the hands?',opts:['45°','60°','90°','120°'],ans:2},
+    {cat:'Spatial',q:'If you rotate the letter "d" 180°, what do you get?',opts:['b','p','q','d'],ans:2},
+    {cat:'Spatial',q:'Which 3D shape has a circular base and a single apex?',opts:['Cylinder','Pyramid','Cone','Sphere'],ans:2},
+  ];
+
+  const catList = ['Pattern','Logic','Verbal','Spatial'];
+  const iqLabels = [[130,'Gifted'],[120,'Superior'],[110,'High average'],[100,'Average'],[90,'Low average'],[80,'Below average'],[0,'Borderline']];
+  const medals = ['🥇','🥈','🥉'];
+  let current=0, scores={}, cats={}, answered=false, playerName='', finalIQ=0;
+
+  function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-'+name).classList.add('active');
+    if(name==='leaderboard') loadLeaderboard();
+  }
+
+  function startQuiz() {
+    playerName = document.getElementById('player-name').value.trim();
+    if(!playerName) { alert('Please enter your name first.'); return; }
+    current=0; answered=false;
+    scores={Pattern:0,Logic:0,Verbal:0,Spatial:0};
+    cats={Pattern:0,Logic:0,Verbal:0,Spatial:0};
+    showSection('quiz');
+    render();
+  }
+
+  function render() {
+    const q = questions[current];
+    document.getElementById('prog').style.width = Math.round(current/questions.length*100)+'%';
+    document.getElementById('q-counter').textContent = 'Question '+(current+1)+' of '+questions.length;
+    document.getElementById('q-cat').textContent = q.cat;
+    document.getElementById('q-text').textContent = q.q;
+    const wrap = document.getElementById('options-wrap');
+    wrap.innerHTML = '';
+    q.opts.forEach((o,i) => {
+      const b = document.createElement('button');
+      b.className = 'opt-btn'; b.textContent = o;
+      b.onclick = () => select(i);
+      wrap.appendChild(b);
+    });
+    document.getElementById('next-btn').style.display = 'none';
+    answered = false;
+  }
+
+  function select(i) {
+    if(answered) return;
+    answered = true;
+    const q = questions[current];
+    cats[q.cat]++;
+    document.querySelectorAll('.opt-btn').forEach((b,idx) => {
+      b.onclick = null;
+      if(idx===q.ans) b.className='opt-btn correct';
+      else if(idx===i) b.className='opt-btn wrong';
+    });
+    if(i===q.ans) scores[q.cat]++;
+    if(current===questions.length-1) setTimeout(showResult,700);
+    else document.getElementById('next-btn').style.display='block';
+  }
+
+  function nextQ() { current++; render(); }
+
+  async function showResult() {
+    showSection('result');
+    let total=0;
+    catList.forEach(c => { total += cats[c] ? scores[c]/cats[c] : 0; });
+    finalIQ = Math.round(70 + (total/catList.length)*70);
+    document.getElementById('iq-val').textContent = finalIQ;
+    const lbl = iqLabels.find(l => finalIQ >= l[0]);
+    document.getElementById('iq-label').textContent = lbl ? lbl[1] : 'Borderline';
+    const pos = Math.min(Math.max((finalIQ-70)/70,0),1)*100;
+    document.getElementById('band-dot').style.left = Math.round(pos)+'%';
+    let bd = '<div style="font-size:13px;font-weight:500;margin-bottom:8px;">Score by category</div>';
+    catList.forEach(c => {
+      const p = cats[c] ? Math.round(scores[c]/cats[c]*100) : 0;
+      bd += '<div class="breakdown-row"><span style="color:#666">'+c+'</span><span style="font-weight:500">'+scores[c]+'/'+cats[c]+' ('+p+'%)</span></div>';
+    });
+    document.getElementById('breakdown-card').innerHTML = bd;
+    document.getElementById('save-status').textContent = 'Saving score...';
+    try {
+      await pushScore({ name: playerName, iq: finalIQ, scores, date: new Date().toLocaleDateString() });
+      document.getElementById('save-status').textContent = 'Score saved to leaderboard!';
+    } catch(e) {
+      document.getElementById('save-status').textContent = USE_JSONBIN ? 'Could not save — check your JSONBin config.' : 'Score saved locally.';
+    }
+  }
+
+  async function loadLeaderboard() {
+    const lb = document.getElementById('lb-list');
+    lb.innerHTML = '<p style="color:#999;font-size:14px;">Loading...</p>';
+    try {
+      const entries = await fetchScores();
+      entries.sort((a,b) => b.iq - a.iq);
+      if(!entries.length) { lb.innerHTML='<p style="color:#999;font-size:14px;">No scores yet. Be the first!</p>'; return; }
+      lb.innerHTML = entries.slice(0,30).map((e,i) => {
+        const lbl = iqLabels.find(l => e.iq >= l[0]);
+        const rank = i<3 ? '<span style="font-size:16px;">'+medals[i]+'</span>' : '<span class="lb-rank">'+(i+1)+'</span>';
+        return '<div class="lb-row">'+rank+'<span class="lb-name">'+esc(e.name)+'</span><span class="lb-date">'+esc(e.date||'')+'</span><span class="lb-cat">'+(lbl?lbl[1]:'')+'</span><span class="lb-iq">'+e.iq+'</span></div>';
+      }).join('');
+      if(!USE_JSONBIN) lb.innerHTML += '<p style="font-size:11px;color:#aaa;margin-top:1rem;">Scores saved locally in this browser. Enable JSONBin for a shared leaderboard across devices.</p>';
+    } catch(e) {
+      lb.innerHTML = '<p style="color:#999;font-size:14px;">Could not load leaderboard.</p>';
+    }
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function resetQuiz() { showSection('name'); }
+</script>
+</body>
+</html>
